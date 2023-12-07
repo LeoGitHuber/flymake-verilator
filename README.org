@@ -1,0 +1,16 @@
+* flymake-verilator.el
+
+An Emacs flymake handler for syntax-checking Verilog using =verilator=.
+
+** Installation
+
+First install =verilator=.
+
+You'll need to add the directory containing `flymake-json.el` to your `load-path`,
+and then ~(require 'flymake-verilator)~.
+
+** Usage
+
+Add the following to your emacs init file:
+
+~(require 'flymake-verilator)~
