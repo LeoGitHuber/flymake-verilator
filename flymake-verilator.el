@@ -28,7 +28,8 @@
               (let* ((msg (match-string 4))
                      (level-msg (match-string 1))
                      (line (string-to-number (match-string 2)))
-                     (column (string-to-number (match-string 3)))
+                     (locate-string)
+                     (cal)
                      (beg)
                      (end)
                      (level))
@@ -36,23 +37,31 @@
                              ((string-match-p "%Error" level-msg) ':error)
                              ((string-match-p "%Warning" level-msg) ':warning)
                              (t :note)))
+                (search-forward-regexp "\\(\\^~*\\)" nil t)
+                (setq cal (length (match-string 1)))
+                (let ((current (point))
+                      (line-beginning (line-beginning-position)))
+                  (forward-line -1)
+                  (forward-char (- current line-beginning))
+                  (setq locate-string (buffer-substring-no-properties (- (point) cal) (point))))
                 (setq beg (with-current-buffer source-buffer
                             (save-excursion
                               (save-restriction
                                 (goto-char (point-min))
                                 (or (equal line 1)
                                     (forward-line (- line 1)))
-                                (- (+ (point) column) 1)))))
-                (setq end (if (equal level ':error)
-                              (+ beg 1)
-                            (+ beg (- (length msg) (string-match ": '" msg) 4))))
+                                (search-forward locate-string nil t)
+                                (- (point) cal)
+                                ))))
+                (setq end (+ beg cal))
                 (setq diags
                       (cons (flymake-make-diagnostic
                              source-buffer beg end level msg)
                             diags))
                 ))
             (funcall report-fn diags)
-            ))))))
+            )))))
+  )
 
 (defun verilog-flymake-detect (report-fn &rest _args)
   "A Flymake backend for verilog.
@@ -94,7 +103,6 @@ current buffer state and calls REPORT-FN when done."
                                   :panic
                                   :explanation
                                   (format "process %s died" proc))))
-                     (kill-buffer output-buffer)
                      (kill-buffer verilog--flymake-output-buffer)
                      )))
                :stderr verilog--flymake-output-buffer
